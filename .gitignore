@@ -7,6 +7,7 @@ token.pickle
 config.json
 
 *.bat
+.history/
 
 # C extensions
 *.so

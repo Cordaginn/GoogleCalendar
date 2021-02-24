@@ -8,17 +8,18 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 import json
 
+professors_name_reg = r'\w+ \w\. \w\. \w+\-\d+'
 
 def main():
     config = None
+    creds = None
     with open("config.json","r") as conf:
         config = json.load(conf)
     tokenPATH = config["tokenPATH"]
     SCOPES = config["scopes"]
     credentialsPATH = config["credentialsPATH"]
-    calendar_id = config["calendarId"]
+    calendar_id = str(config["calendarId"])
     targetCalendarUrl = config["calendarURL"]
-    creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
@@ -50,8 +51,16 @@ def main():
     google_calendar = icalendar.Calendar().from_ical(response.content)
     for component in google_calendar.walk():
         if component.name == "VEVENT":
+            event_color = '3'
             event_title = re.split(professors_name_reg, component.get('summary'))[0]
             event_professors = "\n".join(re.findall(professors_name_reg, component.get('summary')))
+            if('-' in event_professors):
+                if ('пр.' in event_title) or not('LMS' in event_professors):
+                    event_color = '6'
+                else:
+                    event_color = '7'
+                if('LMS' in event_professors):
+                    event_color = '7'
             event_start = bytes.decode(component.get('dtstart').to_ical(),'utf-8')
             event_end = bytes.decode(component.get('dtend').to_ical(),'utf-8')
             event_start = icalendar.vDatetime.from_ical(event_start).isoformat('T')
@@ -59,6 +68,7 @@ def main():
             event = {
                 'summary': event_title,
                 'description':event_professors,
+                'colorId':event_color,
                 'start':{
                   'dateTime':event_start,  
                 } ,
